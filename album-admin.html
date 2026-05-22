@@ -750,13 +750,13 @@ async function presignedPut(key, contentType, expiresIn=3600){
     `X-Amz-Credential=${credential}`,
     `X-Amz-Date=${amzDate}`,
     `X-Amz-Expires=${expiresIn}`,
-    `X-Amz-SignedHeaders=content-type%3Bhost`,
+    `X-Amz-SignedHeaders=host`,
   ].join('&');
 
   const canonicalRequest = [
     'PUT', path, qs,
-    `content-type:${contentType}\nhost:${host}\n`,
-    'content-type;host',
+    `host:${host}\n`,
+    'host',
     'UNSIGNED-PAYLOAD',
   ].join('\n');
 
