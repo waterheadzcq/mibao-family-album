@@ -1928,14 +1928,22 @@ newSaveBtn.onclick=async()=>{
 /* ════════════════════════════════
    PATCH renderSettings to call new renderers
 ════════════════════════════════ */
-const _origRenderSettings = renderSettings;
-async function renderSettings(){
-  _origRenderSettings();
+const _renderSettingsBase = renderSettings;
+async function renderSettingsFull(){
+  _renderSettingsBase();
   await renderCoverSettings();
   renderMusicSettings();
   renderGlobalTags();
   await renderDataStats();
 }
+/* Override all callers */
+document.querySelectorAll('.nav-item').forEach(item=>{
+  const orig = item.onclick;
+  item.addEventListener('click', ()=>{
+    const p = item.dataset.panel;
+    if(p==='settings') renderSettingsFull();
+  });
+});
 
 /* also patch buildQueueCard & buildAlbumCard tags display */
 </script>
