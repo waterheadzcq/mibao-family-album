@@ -1,0 +1,1513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="theme-color" content="#0e0e0f"/>
+  <title>家庭相册 · Family Archive</title>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Noto+Serif+SC:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+/* ═══════════════════════════════════════════
+   CSS VARIABLES
+═══════════════════════════════════════════ */
+:root{
+  --bg:#0e0e0f;--bg2:#141416;--surf:#1a1a1e;--surf2:#222228;
+  --bd:#2c2c32;--bd2:#38383f;
+  --gold:#b8922a;--gold-l:#d4a93c;--gold-d:#7a5e1a;--gold-f:rgba(184,146,42,.07);
+  --silver:#8e9099;--silver-l:#b8bcc8;
+  --white:#e8e6e0;--dim:#5a5a60;
+  --ease:cubic-bezier(.25,.46,.45,.94);--expo:cubic-bezier(.19,1,.22,1);
+  --silk:cubic-bezier(.77,0,.175,1);
+}
+
+/* ═══════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{background:var(--bg);color:var(--white);font-family:'Noto Serif SC','Cormorant Garamond',serif;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body.bw-mode img{filter:grayscale(1) contrast(1.05)!important}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--gold-d);border-radius:2px}
+
+/* ═══════════════════════════════════════════
+   GATE
+═══════════════════════════════════════════ */
+#gate{position:fixed;inset:0;z-index:1000;background:var(--bg);display:none;align-items:center;justify-content:center}
+.gate-box{background:var(--surf);border:1px solid var(--bd2);border-radius:4px;padding:52px 44px;width:360px;max-width:92vw;box-shadow:0 24px 80px rgba(0,0,0,.9);display:flex;flex-direction:column;align-items:center;gap:22px}
+.gate-logo-zh{font-size:1.1rem;letter-spacing:.45em;color:var(--white)}
+.gate-logo-en{font-family:'Cormorant Garamond',serif;font-size:.66rem;letter-spacing:.5em;color:var(--gold);text-transform:uppercase}
+.gate-line{width:48px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.gate-hint{font-family:'Cormorant Garamond',serif;font-size:.78rem;letter-spacing:.22em;color:var(--silver);text-align:center}
+.gate-input{width:100%;background:var(--bg2);border:1px solid var(--bd);border-radius:2px;padding:12px 16px;color:var(--white);font-size:.9rem;outline:none;text-align:center;letter-spacing:.25em;transition:border-color .25s}
+.gate-input:focus{border-color:var(--gold-d)}
+.gate-err{font-size:.73rem;color:#c45c5c;letter-spacing:.05em;min-height:18px;text-align:center}
+.gate-btn{width:100%;padding:13px;background:var(--gold-f);border:1px solid var(--gold-d);color:var(--gold-l);font-family:'Cormorant Garamond',serif;font-size:.78rem;letter-spacing:.42em;text-transform:uppercase;cursor:pointer;border-radius:2px;transition:background .3s}
+.gate-btn:hover{background:rgba(184,146,42,.18)}
+
+/* ═══════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════ */
+#hdr{position:fixed;top:0;left:0;right:0;z-index:100;padding:20px 52px;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(180deg,rgba(14,14,15,.97) 0%,transparent 100%);transition:background .4s var(--ease),backdrop-filter .4s var(--ease)}
+#hdr.scrolled{background:rgba(14,14,15,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--bd)}
+.logo-wrap{display:flex;flex-direction:column;gap:3px}
+.logo-zh{font-size:1rem;font-weight:400;letter-spacing:.45em;color:var(--white)}
+.logo-en{font-family:'Cormorant Garamond',serif;font-size:.64rem;font-weight:300;letter-spacing:.42em;color:var(--gold);text-transform:uppercase}
+.hdr-center{display:flex;gap:6px;align-items:center}
+.hdr-line{width:48px;height:1px;background:linear-gradient(90deg,var(--gold-d),transparent)}
+
+/* Header controls */
+.hdr-controls{display:flex;align-items:center;gap:16px}
+.ctrl-btn{background:none;border:none;cursor:pointer;padding:6px;color:var(--silver);transition:color .25s;font-size:.95rem;line-height:1;border-radius:50%;display:flex;align-items:center;justify-content:center;width:32px;height:32px}
+.ctrl-btn:hover{color:var(--gold-l);background:rgba(184,146,42,.08)}
+.ctrl-btn.active{color:var(--gold-l)}
+.nav-admin{font-family:'Cormorant Garamond',serif;font-size:.7rem;letter-spacing:.28em;color:var(--silver);text-decoration:none;text-transform:uppercase;transition:color .3s}
+.nav-admin:hover{color:var(--gold-l)}
+
+/* ═══════════════════════════════════════════
+   HERO — Ken Burns cover
+═══════════════════════════════════════════ */
+.hero{height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;overflow:hidden}
+.hero-cover{position:absolute;inset:-5%;background-size:cover;background-position:center;animation:kenBurns 24s ease-in-out infinite alternate;opacity:0;transition:opacity 1.2s var(--ease)}
+.hero-cover.loaded{opacity:1}
+/* 多层保护：底部重压 + 中部柔化 + 顶部轻压，确保任何亮色照片下文字清晰 */
+.hero-cover-overlay{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(180deg,
+      rgba(8,8,9,.72) 0%,
+      rgba(8,8,9,.42) 28%,
+      rgba(8,8,9,.38) 50%,
+      rgba(8,8,9,.55) 72%,
+      rgba(8,8,9,.80) 100%
+    );
+}
+.hero-grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(184,146,42,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(184,146,42,.035) 1px,transparent 1px);background-size:80px 80px;mask-image:radial-gradient(ellipse 70% 60% at 50% 50%,black 30%,transparent 100%)}
+.hero-radial{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(184,146,42,.06) 0%,transparent 70%)}
+.hero-content{position:relative;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px;z-index:2}
+/* Hero 文字：多层 text-shadow 保护，确保浅色/白色照片背景下依然清晰 */
+.hero-eyebrow{
+  font-family:'Cormorant Garamond',serif;font-size:.72rem;letter-spacing:.58em;
+  color:var(--gold-l);text-transform:uppercase;
+  opacity:0;transform:translateY(12px);animation:fadeUp 1s var(--expo) .3s forwards;
+  text-shadow:0 0 20px rgba(0,0,0,.9),0 1px 8px rgba(0,0,0,.8),0 2px 24px rgba(0,0,0,.6);
+}
+.hero-title{
+  font-size:clamp(2.6rem,6vw,5.4rem);font-weight:300;letter-spacing:.25em;line-height:1.1;
+  color:#fff;
+  opacity:0;transform:translateY(18px);animation:fadeUp 1.2s var(--expo) .5s forwards;
+  /* 厚重阴影：近距强阴影 + 中距扩散 + 远距光晕，三层叠加 */
+  text-shadow:
+    0 1px 0 rgba(0,0,0,.95),
+    0 2px 6px rgba(0,0,0,.9),
+    0 4px 18px rgba(0,0,0,.75),
+    0 8px 40px rgba(0,0,0,.55),
+    0 0 60px rgba(0,0,0,.4);
+}
+.hero-title em{
+  font-style:italic;color:var(--gold-l);font-family:'Cormorant Garamond',serif;
+  font-size:1.15em;font-weight:300;
+  text-shadow:
+    0 1px 0 rgba(0,0,0,.95),
+    0 2px 8px rgba(0,0,0,.85),
+    0 4px 20px rgba(0,0,0,.6),
+    0 0 30px rgba(184,146,42,.35);
+}
+.hero-divider{width:80px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:0;animation:fadeIn 1s var(--ease) .9s forwards;filter:drop-shadow(0 0 4px rgba(0,0,0,.8))}
+.hero-sub{
+  font-size:.84rem;font-weight:400;letter-spacing:.2em;color:#fff;
+  opacity:0;animation:fadeIn 1s var(--ease) 1.1s forwards;
+  /* 磨砂条背景：让副标题在任何背景下可读 */
+  background:rgba(0,0,0,.38);
+  padding:6px 22px 7px;
+  backdrop-filter:blur(6px);
+  border-radius:1px;
+  text-shadow:0 1px 6px rgba(0,0,0,.8),0 2px 16px rgba(0,0,0,.5);
+}
+.hero-count{
+  font-family:'Cormorant Garamond',serif;font-size:.68rem;letter-spacing:.32em;color:var(--gold-l);
+  opacity:0;animation:fadeIn 1s var(--ease) 1.3s forwards;
+  text-shadow:0 1px 8px rgba(0,0,0,.9),0 2px 20px rgba(0,0,0,.7);
+}
+
+/* Today's Memory card (hero bottom) */
+.today-memory{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);z-index:3;opacity:0;animation:fadeIn 1s ease 2s forwards;cursor:pointer}
+.tm-inner{display:flex;align-items:center;gap:14px;background:rgba(14,14,15,.72);border:1px solid rgba(184,146,42,.25);border-radius:2px;padding:12px 18px;backdrop-filter:blur(12px);transition:border-color .3s,background .3s}
+.tm-inner:hover{border-color:var(--gold);background:rgba(14,14,15,.85)}
+.tm-thumb{width:44px;height:44px;border-radius:1px;overflow:hidden;flex-shrink:0;border:1px solid rgba(184,146,42,.2)}
+.tm-thumb img{width:100%;height:100%;object-fit:cover}
+.tm-text{}
+.tm-label{font-family:'Cormorant Garamond',serif;font-size:.62rem;letter-spacing:.4em;color:var(--gold);text-transform:uppercase;margin-bottom:3px}
+.tm-title{font-size:.78rem;letter-spacing:.06em;color:var(--silver-l)}
+.tm-date{font-family:'Cormorant Garamond',serif;font-size:.65rem;letter-spacing:.22em;color:var(--dim)}
+
+.hero-scroll{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;opacity:0;animation:fadeIn 1s ease 1.8s forwards;z-index:3}
+.hero-scroll span{font-family:'Cormorant Garamond',serif;font-size:.6rem;letter-spacing:.42em;color:rgba(255,255,255,.55);text-transform:uppercase;text-shadow:0 1px 8px rgba(0,0,0,.8)}
+.scroll-line{width:1px;height:32px;background:linear-gradient(180deg,var(--gold-d),transparent);animation:scrollPulse 2s ease-in-out infinite}
+
+/* ═══════════════════════════════════════════
+   TOOLBAR (Layout switch + Filters)
+═══════════════════════════════════════════ */
+.toolbar{position:sticky;top:61px;z-index:90;background:rgba(14,14,15,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--bd);padding:0 52px;display:flex;align-items:center;justify-content:space-between;gap:16px;height:52px}
+.toolbar-left{display:flex;align-items:center;gap:4px}
+.layout-btn{background:none;border:1px solid transparent;border-radius:2px;padding:6px 10px;cursor:pointer;color:var(--dim);font-size:.82rem;transition:color .25s,border-color .25s,background .25s;line-height:1}
+.layout-btn:hover{color:var(--silver);border-color:var(--bd)}
+.layout-btn.active{color:var(--gold);border-color:var(--gold-d);background:var(--gold-f)}
+.toolbar-divider{width:1px;height:20px;background:var(--bd);margin:0 8px}
+.toolbar-right{display:flex;align-items:center;gap:8px}
+
+/* Tag chips */
+.tag-strip{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.tag-strip::-webkit-scrollbar{display:none}
+.tag-chip{padding:4px 12px;border:1px solid var(--bd);border-radius:20px;font-family:'Cormorant Garamond',serif;font-size:.65rem;letter-spacing:.28em;color:var(--dim);cursor:pointer;text-transform:uppercase;transition:all .25s;white-space:nowrap;background:transparent}
+.tag-chip:hover{border-color:var(--bd2);color:var(--silver)}
+.tag-chip.active{border-color:var(--gold-d);color:var(--gold);background:var(--gold-f)}
+
+/* ═══════════════════════════════════════════
+   YEAR SCRUBBER (right side)
+═══════════════════════════════════════════ */
+#yearScrubber{position:fixed;right:18px;top:50%;transform:translateY(-50%);z-index:80;display:flex;flex-direction:column;align-items:center;gap:6px;opacity:0;transition:opacity .4s}
+#yearScrubber.visible{opacity:1}
+.ys-item{position:relative;display:flex;align-items:center;justify-content:flex-end;gap:8px;cursor:pointer}
+.ys-dot{width:5px;height:5px;border-radius:50%;background:var(--bd2);border:1px solid var(--bd2);transition:background .25s,transform .25s,border-color .25s}
+.ys-item:hover .ys-dot,.ys-item.active .ys-dot{background:var(--gold);border-color:var(--gold);transform:scale(1.4)}
+.ys-label{font-family:'Cormorant Garamond',serif;font-size:.6rem;letter-spacing:.2em;color:var(--gold);opacity:0;transform:translateX(4px);transition:opacity .2s,transform .2s;pointer-events:none;white-space:nowrap;position:absolute;right:14px}
+.ys-item:hover .ys-label{opacity:1;transform:translateX(0)}
+
+/* ═══════════════════════════════════════════
+   SECTION HEADER
+═══════════════════════════════════════════ */
+.tl-section{padding:60px 0 160px;position:relative}
+.sec-header{text-align:center;padding:0 24px 60px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.sec-label{font-family:'Cormorant Garamond',serif;font-size:.68rem;letter-spacing:.52em;color:var(--gold);text-transform:uppercase}
+.sec-title{font-size:clamp(1.4rem,3vw,2.2rem);font-weight:300;letter-spacing:.2em;color:var(--white)}
+
+/* ═══════════════════════════════════════════
+   YEAR DIVIDER (chapter page)
+═══════════════════════════════════════════ */
+.year-divider{width:100%;padding:48px 52px;display:flex;align-items:center;gap:32px;margin-bottom:16px}
+.yd-year{font-family:'Cormorant Garamond',serif;font-size:clamp(3.5rem,8vw,7rem);font-weight:300;color:rgba(184,146,42,.12);letter-spacing:.06em;line-height:1;flex-shrink:0;position:relative}
+.yd-year::after{content:attr(data-year);position:absolute;inset:0;color:transparent;-webkit-text-stroke:1px rgba(184,146,42,.25)}
+.yd-info{display:flex;flex-direction:column;gap:6px}
+.yd-count{font-family:'Cormorant Garamond',serif;font-size:.7rem;letter-spacing:.4em;color:var(--gold-d);text-transform:uppercase}
+.yd-line{width:80px;height:1px;background:linear-gradient(90deg,var(--gold-d),transparent)}
+
+/* ═══════════════════════════════════════════
+   LAYOUT 1 — TIMELINE
+═══════════════════════════════════════════ */
+#viewTimeline{display:block}
+.tl-track{position:relative;max-width:1080px;margin:0 auto;padding:0 24px}
+.tl-track::before{content:'';position:absolute;top:0;bottom:0;left:50%;transform:translateX(-50%);width:2px;background:linear-gradient(180deg,transparent 0%,var(--gold-d) 6%,var(--gold-d) 94%,transparent 100%)}
+.tl-item{position:relative;display:grid;grid-template-columns:1fr 60px 1fr;align-items:center;margin-bottom:88px;opacity:0;transition:opacity .8s var(--ease),transform .8s var(--ease)}
+.tl-item.left{transform:translateX(-36px)}.tl-item.right{transform:translateX(36px)}
+.tl-item.visible{opacity:1;transform:none}
+.tl-node{display:flex;flex-direction:column;align-items:center;gap:5px;z-index:2}
+.tl-dot{width:14px;height:14px;border-radius:50%;background:var(--bg);border:1.5px solid var(--gold);box-shadow:0 0 0 3px rgba(184,146,42,.14),0 0 14px rgba(184,146,42,.22);transition:box-shadow .4s,transform .4s}
+.tl-item:hover .tl-dot{box-shadow:0 0 0 5px rgba(184,146,42,.2),0 0 22px rgba(184,146,42,.45);transform:scale(1.2)}
+.tl-year-label{font-family:'Cormorant Garamond',serif;font-size:.61rem;letter-spacing:.2em;color:var(--gold-d);white-space:nowrap}
+.tl-empty{}
+
+/* ═══════════════════════════════════════════
+   LAYOUT 2 — MASONRY
+═══════════════════════════════════════════ */
+#viewMasonry{display:none}
+.masonry-wrap{max-width:1200px;margin:0 auto;padding:0 40px}
+.masonry-grid{columns:2 380px;column-gap:20px}
+.masonry-item{break-inside:avoid;margin-bottom:20px;opacity:0;transition:opacity .6s var(--ease),transform .6s var(--ease);transform:translateY(20px)}
+.masonry-item.visible{opacity:1;transform:none}
+
+/* ═══════════════════════════════════════════
+   LAYOUT 3 — FILMSTRIP
+═══════════════════════════════════════════ */
+#viewFilmstrip{display:none}
+.filmstrip-wrap{max-width:1200px;margin:0 auto;padding:0 40px}
+.filmstrip-year-group{margin-bottom:60px}
+.filmstrip-year-title{font-family:'Cormorant Garamond',serif;font-size:.72rem;letter-spacing:.45em;color:var(--gold);text-transform:uppercase;margin-bottom:16px;padding-left:4px}
+.filmstrip-row{display:flex;gap:3px;overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--gold-d) var(--bg);padding-bottom:8px}
+.filmstrip-row::-webkit-scrollbar{height:3px}
+.filmstrip-row::-webkit-scrollbar-track{background:var(--bg)}
+.filmstrip-row::-webkit-scrollbar-thumb{background:var(--gold-d);border-radius:2px}
+.filmstrip-cell{flex-shrink:0;width:200px;height:150px;overflow:hidden;cursor:pointer;position:relative;border:1px solid var(--bd);transition:border-color .3s}
+.filmstrip-cell:hover{border-color:rgba(184,146,42,.4)}
+.filmstrip-cell img{width:100%;height:100%;object-fit:cover;transition:transform .5s var(--expo)}
+.filmstrip-cell:hover img{transform:scale(1.08)}
+.filmstrip-cell::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(0,0,0,.5) 100%);opacity:0;transition:opacity .3s}
+.filmstrip-cell:hover::after{opacity:1}
+
+/* ═══════════════════════════════════════════
+   PHOTO CARD (shared)
+═══════════════════════════════════════════ */
+.tl-card,.masonry-card{cursor:pointer;border-radius:2px;overflow:hidden;background:var(--surf);border:1px solid var(--bd);box-shadow:0 4px 20px rgba(0,0,0,.55),0 1px 0 rgba(184,146,42,.09) inset;transition:transform .5s var(--expo),box-shadow .5s var(--expo),border-color .4s}
+.tl-card:hover,.masonry-card:hover{transform:translateY(-4px) scale(1.01);box-shadow:0 20px 56px rgba(0,0,0,.7),0 0 0 1px rgba(184,146,42,.28),0 1px 0 rgba(184,146,42,.1) inset;border-color:rgba(184,146,42,.3)}
+.tl-card.left{margin-right:auto;max-width:400px}.tl-card.right{margin-left:auto;max-width:400px}
+
+/* aspect-ratio aware */
+.card-img{position:relative;overflow:hidden;background:var(--bg2)}
+.card-img.ratio-landscape{aspect-ratio:4/3}
+.card-img.ratio-portrait{aspect-ratio:3/4}
+.card-img.ratio-square{aspect-ratio:1}
+.card-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .8s var(--expo),filter .4s;filter:brightness(.93) contrast(1.04)}
+.tl-card:hover .card-img img,.masonry-card:hover .card-img img{transform:scale(1.06);filter:brightness(1) contrast(1.04)}
+.card-img::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.04) 0%,transparent 50%,rgba(0,0,0,.28) 100%);pointer-events:none}
+.card-placeholder{display:flex;align-items:center;justify-content:center;color:var(--dim);font-family:'Cormorant Garamond',serif;font-size:.72rem;letter-spacing:.3em;background:linear-gradient(135deg,var(--bg2),var(--surf));width:100%;aspect-ratio:4/3}
+
+/* Card info */
+.card-info{padding:16px 18px 18px;border-top:1px solid var(--bd)}
+.meta-field{display:flex;align-items:flex-start;gap:7px;margin-bottom:6px}
+.meta-field:last-child{margin-bottom:0}
+.mf-icon{font-size:.76rem;flex-shrink:0;margin-top:1px;width:15px;text-align:center;opacity:.8}
+.mf-icon.time{color:#b8922a}.mf-icon.loc{color:#7a9eb8}.mf-icon.story{color:#9a7ab8}
+.mf-text{font-family:'Noto Serif SC',serif;font-size:.76rem;font-weight:300;line-height:1.65;letter-spacing:.04em;color:var(--silver)}
+.mf-text.date-txt{font-family:'Cormorant Garamond',serif;font-size:.7rem;letter-spacing:.3em;color:var(--gold);text-transform:uppercase}
+.mf-story-wrap{position:relative}
+.mf-story-text{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;transition:max-height .5s var(--ease)}
+.mf-story-text.expanded{display:block;-webkit-line-clamp:unset}
+.mf-expand-btn{background:none;border:none;cursor:pointer;font-family:'Cormorant Garamond',serif;font-size:.62rem;letter-spacing:.3em;color:var(--gold-d);text-transform:uppercase;padding:4px 0;transition:color .2s}
+.mf-expand-btn:hover{color:var(--gold)}
+
+/* tag badges on card */
+.card-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.card-tag{padding:2px 7px;border:1px solid var(--bd);border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:.58rem;letter-spacing:.22em;color:var(--dim);text-transform:uppercase}
+
+.card-accent{height:2px;background:linear-gradient(90deg,var(--gold),var(--gold-d),transparent);transform:scaleX(0);transform-origin:left;transition:transform .5s var(--expo)}
+.tl-card:hover .card-accent,.masonry-card:hover .card-accent{transform:scaleX(1)}
+
+/* ═══════════════════════════════════════════
+   LIGHTBOX
+═══════════════════════════════════════════ */
+#lb{position:fixed;inset:0;z-index:500;background:rgba(6,6,7,.97);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .4s var(--ease)}
+#lb.active{opacity:1;pointer-events:all}
+.lb-inner{position:relative;display:flex;flex-direction:column;align-items:center;max-width:90vw;max-height:94vh;transform:scale(.96);transition:transform .45s var(--expo)}
+#lb.active .lb-inner{transform:scale(1)}
+
+/* Stage */
+.lb-stage{position:relative;max-width:84vw;max-height:64vh;border:1px solid rgba(184,146,42,.16);box-shadow:0 0 80px rgba(0,0,0,.9);overflow:hidden;cursor:zoom-in}
+.lb-stage.zoomed{cursor:grab}
+.lb-stage.zoomed.panning{cursor:grabbing}
+.lb-stage.is-video{cursor:default}
+#lbImg{display:block;max-width:84vw;max-height:64vh;width:auto;height:auto;object-fit:contain;filter:brightness(.95);transform-origin:center;user-select:none;-webkit-user-drag:none}
+#lbImgPrev{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;pointer-events:none;transform-origin:center}
+/* Video in lightbox */
+#lbVideo{display:none;max-width:84vw;max-height:64vh;width:auto;height:auto;outline:none;background:#000}
+#lbVideo.show{display:block}
+/* Video badge on cards */
+.video-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,.55);border:1.5px solid rgba(255,255,255,.55);display:flex;align-items:center;justify-content:center;pointer-events:none;transition:background .3s,border-color .3s;backdrop-filter:blur(4px)}
+.video-badge svg{width:18px;height:18px;fill:#fff;margin-left:3px}
+.tl-card:hover .video-badge,.masonry-card:hover .video-badge{background:rgba(184,146,42,.45);border-color:rgba(255,255,255,.85)}
+.video-duration{position:absolute;bottom:8px;right:8px;font-family:'Cormorant Garamond',serif;font-size:.62rem;letter-spacing:.2em;color:#fff;background:rgba(0,0,0,.6);padding:2px 7px;border-radius:1px;pointer-events:none}
+.card-type-badge{display:inline-flex;align-items:center;gap:4px;font-family:'Cormorant Garamond',serif;font-size:.58rem;letter-spacing:.25em;color:var(--gold-d);text-transform:uppercase;margin-bottom:4px}
+/* Filmstrip video cell */
+.filmstrip-cell video{width:100%;height:100%;object-fit:cover;pointer-events:none}
+
+/* Zoom hint */
+.lb-zoom-hint{position:absolute;bottom:10px;right:10px;font-family:'Cormorant Garamond',serif;font-size:.6rem;letter-spacing:.28em;color:rgba(255,255,255,.35);text-transform:uppercase;pointer-events:none;transition:opacity .3s}
+
+/* Caption */
+.lb-caption{width:100%;max-width:640px;padding:20px 0 0;transition:opacity .35s var(--ease)}
+.lb-caption.fading{opacity:0}
+.lb-cap-divider{width:36px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:0 auto 16px}
+.lb-meta-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
+.lb-meta-row:last-child{margin-bottom:0}
+.lb-icon{font-size:.82rem;flex-shrink:0;width:17px;text-align:center;margin-top:2px;opacity:.85}
+.lb-icon.time{color:#b8922a}.lb-icon.loc{color:#7a9eb8}.lb-icon.story{color:#9a7ab8}
+.lb-meta-text{font-family:'Noto Serif SC',serif;font-size:.8rem;font-weight:300;letter-spacing:.05em;line-height:1.75;color:var(--silver-l)}
+.lb-meta-text.date{font-family:'Cormorant Garamond',serif;font-size:.7rem;letter-spacing:.38em;color:var(--gold);text-transform:uppercase}
+
+/* Comments */
+.lb-comments{max-width:640px;width:100%;margin-top:18px;padding-top:18px;border-top:1px solid var(--bd)}
+.lb-comments-title{font-family:'Cormorant Garamond',serif;font-size:.65rem;letter-spacing:.42em;color:var(--gold-d);text-transform:uppercase;margin-bottom:12px}
+.comment-list{display:flex;flex-direction:column;gap:8px;max-height:120px;overflow-y:auto;margin-bottom:12px}
+.comment-item{font-size:.76rem;color:var(--silver);line-height:1.6;display:flex;gap:8px}
+.comment-name{color:var(--gold-d);flex-shrink:0;font-family:'Cormorant Garamond',serif;letter-spacing:.12em}
+.comment-add{display:flex;gap:8px}
+.comment-name-input,.comment-text-input{background:var(--surf);border:1px solid var(--bd);border-radius:2px;padding:8px 10px;color:var(--white);font-family:'Noto Serif SC',serif;font-size:.76rem;outline:none;transition:border-color .25s}
+.comment-name-input:focus,.comment-text-input:focus{border-color:var(--gold-d)}
+.comment-name-input{width:90px;flex-shrink:0}
+.comment-text-input{flex:1}
+.comment-send-btn{padding:8px 14px;background:var(--gold-f);border:1px solid var(--gold-d);color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:.64rem;letter-spacing:.28em;text-transform:uppercase;cursor:pointer;transition:background .25s;white-space:nowrap}
+.comment-send-btn:hover{background:rgba(184,146,42,.18)}
+
+/* LB controls */
+.lb-nav{position:fixed;top:50%;transform:translateY(-50%);background:rgba(16,16,18,.75);border:1px solid var(--bd);color:var(--silver);width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.05rem;backdrop-filter:blur(8px);transition:background .3s,color .3s,border-color .3s}
+.lb-nav:hover{background:rgba(184,146,42,.18);border-color:var(--gold-d);color:var(--gold-l)}
+.lb-prev{left:20px}.lb-next{right:20px}
+.lb-close{position:fixed;top:20px;right:20px;background:rgba(16,16,18,.75);border:1px solid var(--bd);color:var(--silver);width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.9rem;backdrop-filter:blur(8px);transition:background .3s,color .3s}
+.lb-close:hover{background:rgba(184,146,42,.18);color:var(--gold-l)}
+.lb-actions{position:fixed;top:20px;right:70px;display:flex;gap:8px}
+.lb-action-btn{background:rgba(16,16,18,.75);border:1px solid var(--bd);color:var(--silver);height:40px;padding:0 14px;border-radius:2px;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:'Cormorant Garamond',serif;font-size:.65rem;letter-spacing:.28em;text-transform:uppercase;backdrop-filter:blur(8px);transition:background .3s,color .3s,border-color .3s}
+.lb-action-btn:hover{background:rgba(184,146,42,.15);border-color:var(--gold-d);color:var(--gold)}
+.lb-action-btn.active{color:var(--gold);border-color:var(--gold-d);background:rgba(184,146,42,.1)}
+.lb-counter{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);font-family:'Cormorant Garamond',serif;font-size:.68rem;letter-spacing:.38em;color:var(--dim);text-transform:uppercase}
+
+/* Slideshow progress bar */
+.lb-ss-bar{position:fixed;bottom:0;left:0;right:0;height:2px;background:transparent}
+.lb-ss-fill{height:100%;background:linear-gradient(90deg,var(--gold-d),var(--gold-l));width:0%;transition:width linear}
+
+/* ═══════════════════════════════════════════
+   MUSIC PLAYER
+═══════════════════════════════════════════ */
+#musicPlayer{position:fixed;bottom:28px;left:28px;z-index:200;opacity:0;transform:translateY(8px);transition:opacity .4s,transform .4s;pointer-events:none}
+#musicPlayer.show{opacity:1;transform:none;pointer-events:all}
+.mp-wrap{display:flex;align-items:center;gap:10px;background:rgba(14,14,16,.82);border:1px solid var(--bd2);border-radius:2px;padding:10px 16px;backdrop-filter:blur(16px)}
+.mp-btn{background:none;border:none;cursor:pointer;color:var(--silver);font-size:1rem;line-height:1;width:28px;height:28px;display:flex;align-items:center;justify-content:center;transition:color .25s}
+.mp-btn:hover{color:var(--gold-l)}
+.mp-info{display:flex;flex-direction:column;gap:2px}
+.mp-label{font-family:'Cormorant Garamond',serif;font-size:.6rem;letter-spacing:.35em;color:var(--gold-d);text-transform:uppercase}
+.mp-track{font-size:.72rem;letter-spacing:.06em;color:var(--silver);max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-vol{width:60px;height:2px;background:var(--bd2);border-radius:1px;cursor:pointer;position:relative}
+.mp-vol-fill{height:100%;background:var(--gold-d);border-radius:1px;pointer-events:none}
+.mp-vol:hover .mp-vol-fill{background:var(--gold)}
+
+/* ═══════════════════════════════════════════
+   EMPTY STATE
+═══════════════════════════════════════════ */
+.empty-state{text-align:center;padding:80px 24px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.empty-icon{width:58px;height:58px;border:1px solid var(--bd);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.35rem;color:var(--dim)}
+.empty-state h3{font-size:1rem;font-weight:300;color:var(--silver);letter-spacing:.1em}
+.empty-state p{font-size:.78rem;color:var(--dim);letter-spacing:.08em;line-height:1.85}
+.btn-goto{margin-top:8px;padding:11px 30px;border:1px solid var(--gold-d);background:transparent;color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:.74rem;letter-spacing:.38em;text-transform:uppercase;cursor:pointer;text-decoration:none;display:inline-block;transition:background .3s,color .3s}
+.btn-goto:hover{background:rgba(184,146,42,.1);color:var(--gold-l)}
+
+/* ═══════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════ */
+footer{border-top:1px solid var(--bd);padding:32px 52px;display:flex;justify-content:space-between;align-items:center}
+.ft-text{font-family:'Cormorant Garamond',serif;font-size:.68rem;letter-spacing:.3em;color:var(--dim)}
+.ft-gold{width:34px;height:1px;background:linear-gradient(90deg,var(--gold-d),transparent)}
+
+/* ═══════════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════════ */
+@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{to{opacity:1}}
+@keyframes scrollPulse{0%,100%{opacity:.4;transform:scaleY(1)}50%{opacity:1;transform:scaleY(1.12)}}
+@keyframes kenBurns{0%{transform:scale(1.05) translate(0,0)}33%{transform:scale(1.08) translate(-1%,.5%)}66%{transform:scale(1.06) translate(1%,-0.5%)}100%{transform:scale(1.1) translate(-.5%,1%)}}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
+@media(max-width:768px){
+  #hdr{padding:16px 20px}
+  .toolbar{padding:0 20px}
+  .tl-track::before{left:24px}
+  .tl-item{grid-template-columns:48px 1fr;margin-bottom:52px}
+  .tl-item .tl-node{grid-column:1;grid-row:1}
+  .tl-item .tl-empty{display:none}
+  .tl-item.left .tl-card,.tl-item.right .tl-card{grid-column:2;grid-row:1;margin:0;max-width:100%}
+  .tl-item.left,.tl-item.right{transform:translateX(-16px)}
+  .masonry-grid{columns:1}
+  .lb-nav{display:none}
+  .lb-actions{display:none}
+  #yearScrubber{display:none}
+  footer{padding:24px 20px;flex-direction:column;gap:12px}
+  .year-divider{padding:32px 20px}
+}
+  </style>
+</head>
+<body>
+
+<!-- Gate -->
+<div id="gate" style="display:none;flex-direction:column">
+  <div style="display:flex;align-items:center;justify-content:center;height:100vh">
+    <div class="gate-box">
+      <div class="gate-logo-zh">家庭相册</div>
+      <div class="gate-logo-en">Family Archive</div>
+      <div class="gate-line"></div>
+      <p class="gate-hint">此相册已加密，请输入访问密码</p>
+      <input class="gate-input" type="password" id="gateInput" placeholder="· · · · · ·" maxlength="32"/>
+      <div class="gate-err" id="gateErr"></div>
+      <button class="gate-btn" id="gateBtn">解锁相册</button>
+    </div>
+  </div>
+</div>
+
+<!-- Header -->
+<header id="hdr">
+  <div class="logo-wrap">
+    <span class="logo-zh">家庭相册</span>
+    <span class="logo-en">Family Archive</span>
+  </div>
+  <div class="hdr-center">
+    <div class="hdr-line"></div>
+  </div>
+  <div class="hdr-controls">
+    <button class="ctrl-btn" id="bwToggle" title="黑白模式">◐</button>
+    <a class="nav-admin" href="album-admin.html">管理</a>
+  </div>
+</header>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-cover" id="heroCover"></div>
+  <div class="hero-cover-overlay"></div>
+  <div class="hero-grid-bg"></div>
+  <div class="hero-radial"></div>
+  <div class="hero-content">
+    <p class="hero-eyebrow">Every Moment Matters</p>
+    <h1 class="hero-title">时光<em> &amp; </em>记忆</h1>
+    <div class="hero-divider"></div>
+    <p class="hero-sub">用影像留住每一个珍贵瞬间</p>
+    <p class="hero-count" id="heroCount"></p>
+  </div>
+  <div class="today-memory" id="todayMemory" style="display:none">
+    <div class="tm-inner">
+      <div class="tm-thumb"><img id="tmImg" src="" alt=""/></div>
+      <div class="tm-text">
+        <div class="tm-label">✦ 随机回忆</div>
+        <div class="tm-title" id="tmTitle"></div>
+        <div class="tm-date" id="tmDate"></div>
+      </div>
+    </div>
+  </div>
+  <div class="hero-scroll"><span>Scroll</span><div class="scroll-line"></div></div>
+</section>
+
+<!-- Toolbar -->
+<div class="toolbar" id="toolbar">
+  <div class="toolbar-left">
+    <button class="layout-btn active" data-layout="timeline" title="时间轴">≡</button>
+    <button class="layout-btn" data-layout="masonry" title="瀑布流">⊞</button>
+    <button class="layout-btn" data-layout="filmstrip" title="胶片横条">▬</button>
+    <div class="toolbar-divider"></div>
+    <div class="tag-strip" id="tagStrip"></div>
+  </div>
+  <div class="toolbar-right">
+    <span style="font-family:'Cormorant Garamond',serif;font-size:.65rem;letter-spacing:.3em;color:var(--dim)" id="filterCount"></span>
+  </div>
+</div>
+
+<!-- Year scrubber -->
+<nav id="yearScrubber" aria-label="年份导航"></nav>
+
+<!-- Timeline section -->
+<section class="tl-section" id="tlSection">
+  <div class="sec-header">
+    <span class="sec-label">Timeline · 时间轴</span>
+    <h2 class="sec-title">岁月留影</h2>
+  </div>
+
+  <!-- Timeline view -->
+  <div id="viewTimeline">
+    <div class="tl-track" id="tlTrack"></div>
+  </div>
+
+  <!-- Masonry view -->
+  <div id="viewMasonry">
+    <div class="masonry-wrap">
+      <div class="masonry-grid" id="masonryGrid"></div>
+    </div>
+  </div>
+
+  <!-- Filmstrip view -->
+  <div id="viewFilmstrip">
+    <div class="filmstrip-wrap" id="filmstripWrap"></div>
+  </div>
+</section>
+
+<!-- Lightbox -->
+<div id="lb" role="dialog" aria-modal="true" aria-label="照片查看器">
+  <button class="lb-close" id="lbClose" aria-label="关闭">✕</button>
+  <div class="lb-actions">
+    <button class="lb-action-btn" id="lbDownload">↓ 下载原图</button>
+    <button class="lb-action-btn" id="lbShare">⊞ 分享</button>
+    <button class="lb-action-btn" id="lbSlideshow">▷ 幻灯片</button>
+    <button class="lb-action-btn" id="lbZoomReset" style="display:none">⊡ 还原</button>
+  </div>
+  <button class="lb-nav lb-prev" id="lbPrev" aria-label="上一张">←</button>
+  <button class="lb-nav lb-next" id="lbNext" aria-label="下一张">→</button>
+
+  <div class="lb-inner">
+    <div class="lb-stage" id="lbStage">
+      <img id="lbImgPrev" src="" alt="" aria-hidden="true"/>
+      <img id="lbImg" src="" alt=""/>
+      <video id="lbVideo" controls playsinline preload="auto"></video>
+      <span class="lb-zoom-hint" id="lbZoomHint">滚轮缩放 · 拖拽查看</span>
+    </div>
+    <div class="lb-caption" id="lbCaption">
+      <div class="lb-cap-divider"></div>
+      <div class="lb-meta-row" id="lbRowDate">
+        <span class="lb-icon time">🕐</span>
+        <span class="lb-meta-text date" id="lbDate"></span>
+      </div>
+      <div class="lb-meta-row" id="lbRowLoc">
+        <span class="lb-icon loc">📍</span>
+        <span class="lb-meta-text" id="lbLoc"></span>
+      </div>
+      <div class="lb-meta-row" id="lbRowStory">
+        <span class="lb-icon story">✦</span>
+        <span class="lb-meta-text" id="lbStory"></span>
+      </div>
+      <div class="lb-comments" id="lbComments"></div>
+    </div>
+  </div>
+
+  <div class="lb-counter" id="lbCounter"></div>
+  <div class="lb-ss-bar"><div class="lb-ss-fill" id="lbSsFill"></div></div>
+</div>
+
+<!-- Music player -->
+<div id="musicPlayer">
+  <div class="mp-wrap">
+    <button class="mp-btn" id="mpBtn" title="播放/暂停">▷</button>
+    <div class="mp-info">
+      <div class="mp-label">Family BGM</div>
+      <div class="mp-track" id="mpTrack">未设置音乐</div>
+    </div>
+    <div class="mp-vol" id="mpVol" title="音量">
+      <div class="mp-vol-fill" id="mpVolFill" style="width:40%"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span class="ft-text">Family Archive · 私人珍藏</span>
+  <div class="ft-gold"></div>
+  <span class="ft-text" id="ftYear"></span>
+</footer>
+
+<audio id="bgAudio" loop></audio>
+
+<script>
+/* ════════════════════════════════════════════════
+   CONSTANTS & HELPERS
+════════════════════════════════════════════════ */
+const ACCESS_KEY  = 'family_album_access';
+const GATE_KEY    = 'family_album_unlocked';
+const MUSIC_KEY   = 'family_album_music';
+const COMMENT_KEY = 'family_album_comments';
+const COVER_KEY   = 'family_album_cover';
+const VOL_KEY     = 'family_album_vol';
+
+const load  = k => { try{ return JSON.parse(localStorage.getItem(k)) }catch{ return null } };
+const store = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+
+function escH(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+/* ────────────────────────────────
+   IndexedDB — shared with admin
+──────────────────────────────── */
+const IDB_NAME  = 'family_album_db';
+const IDB_VER   = 1;
+const IDB_STORE = 'photos';
+
+function openDB(){
+  return new Promise((resolve,reject)=>{
+    const req = indexedDB.open(IDB_NAME, IDB_VER);
+    req.onupgradeneeded = e => {
+      if(!e.target.result.objectStoreNames.contains(IDB_STORE))
+        e.target.result.createObjectStore(IDB_STORE,{keyPath:'id'});
+    };
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+async function loadPhotos(){
+  const db = await openDB();
+  return new Promise((resolve,reject)=>{
+    const req = db.transaction(IDB_STORE,'readonly').objectStore(IDB_STORE).getAll();
+    req.onsuccess = ()=>{
+      const all = (req.result||[]).filter(p=>!p.deleted);
+      all.sort((a,b)=>{
+        if(a.order!=null&&b.order!=null) return a.order-b.order;
+        if(a.order!=null) return -1;
+        if(b.order!=null) return 1;
+        return String(a.id).localeCompare(String(b.id));
+      });
+      resolve(all);
+    };
+    req.onerror = ()=>reject(req.error);
+  });
+}
+
+async function saveComment(photoId, commentsArr){
+  const all = load(COMMENT_KEY)||{};
+  all[photoId] = commentsArr;
+  store(COMMENT_KEY, all);
+}
+
+/* ════════════════════════════════════════════════
+   GATE
+════════════════════════════════════════════════ */
+function checkGate(){
+  const access = load(ACCESS_KEY) || {public:true, pass:''};
+  if(access.public) return;
+  if(sessionStorage.getItem(GATE_KEY)==='1') return;
+  const gate = document.getElementById('gate');
+  gate.style.display = 'flex';
+}
+document.getElementById('gateBtn').onclick = tryUnlock;
+document.getElementById('gateInput').onkeydown = e=>{ if(e.key==='Enter') tryUnlock(); };
+function tryUnlock(){
+  const access = load(ACCESS_KEY)||{public:true,pass:''};
+  if(document.getElementById('gateInput').value === access.pass){
+    sessionStorage.setItem(GATE_KEY,'1');
+    const gate = document.getElementById('gate');
+    gate.style.transition = 'opacity .6s ease';
+    gate.style.opacity = '0';
+    setTimeout(()=>gate.style.display='none', 600);
+  } else {
+    document.getElementById('gateErr').textContent = '密码不正确';
+    document.getElementById('gateInput').value = '';
+    setTimeout(()=>document.getElementById('gateErr').textContent='', 2800);
+  }
+}
+
+/* ════════════════════════════════════════════════
+   HEADER SCROLL
+════════════════════════════════════════════════ */
+window.addEventListener('scroll', ()=>
+  document.getElementById('hdr').classList.toggle('scrolled', scrollY>60),
+  {passive:true}
+);
+
+/* ════════════════════════════════════════════════
+   B&W TOGGLE
+════════════════════════════════════════════════ */
+const bwBtn = document.getElementById('bwToggle');
+bwBtn.onclick = () => {
+  document.body.classList.toggle('bw-mode');
+  bwBtn.classList.toggle('active');
+};
+
+/* ════════════════════════════════════════════════
+   HERO COVER (Ken Burns)
+════════════════════════════════════════════════ */
+async function initHeroCover(){
+  const cover    = load(COVER_KEY);
+  const photos   = await loadPhotos();
+  const coverEl  = document.getElementById('heroCover');
+
+  /* cover stores {id} reference; look up actual photo for r2Url/thumbUrl/dataUrl */
+  let src = null;
+  if(cover?.id){
+    const p = photos.find(p=>p.id===cover.id);
+    src = p ? (p.r2Url||p.thumbUrl||p.dataUrl||null) : null;
+  }
+  if(!src && photos.length){
+    src = photos[0].r2Url||photos[0].thumbUrl||photos[0].dataUrl||null;
+  }
+
+  if(src){
+    coverEl.style.backgroundImage = `url("${src}")`;
+    requestAnimationFrame(()=>{ coverEl.classList.add('loaded'); });
+  }
+
+  // Photo count
+  const countEl = document.getElementById('heroCount');
+  if(photos.length){
+    countEl.textContent = `${photos.length} 张珍贵影像`;
+  }
+}
+
+/* ════════════════════════════════════════════════
+   TODAY'S MEMORY
+════════════════════════════════════════════════ */
+async function initTodayMemory(){
+  const photos = await loadPhotos();
+  if(!photos.length) return;
+  const pick = photos[Math.floor(Math.random()*photos.length)];
+  const el = document.getElementById('todayMemory');
+  document.getElementById('tmImg').src   = pick.r2Url||pick.thumbUrl||pick.dataUrl||'';
+  document.getElementById('tmTitle').textContent = pick.title||pick.date||'一段回忆';
+  document.getElementById('tmDate').textContent  = pick.date||'';
+  el.style.display = 'block';
+  el.onclick = () => openLB(photos.indexOf(pick));
+}
+
+/* ════════════════════════════════════════════════
+   TAG SYSTEM
+════════════════════════════════════════════════ */
+let activeTags = new Set();
+
+function getAllTags(photos){
+  const tags = new Set();
+  photos.forEach(p=>{ (p.tags||[]).forEach(t=>tags.add(t)); });
+  return [...tags];
+}
+
+function renderTagStrip(photos){
+  const strip = document.getElementById('tagStrip');
+  const tags  = getAllTags(photos);
+  strip.innerHTML = '';
+  if(!tags.length){ strip.parentElement.style.display='none'; return; }
+  strip.parentElement.style.display='';
+  tags.forEach(tag=>{
+    const chip = document.createElement('button');
+    chip.className = 'tag-chip' + (activeTags.has(tag)?' active':'');
+    chip.textContent = tag;
+    chip.onclick = () => toggleTag(tag, chip);
+    strip.appendChild(chip);
+  });
+}
+
+function toggleTag(tag, chip){
+  if(activeTags.has(tag)){ activeTags.delete(tag); chip.classList.remove('active'); }
+  else { activeTags.add(tag); chip.classList.add('active'); }
+  renderAll();
+}
+
+function filterPhotos(photos){
+  if(!activeTags.size) return photos;
+  return photos.filter(p=>
+    [...activeTags].every(t=>(p.tags||[]).includes(t))
+  );
+}
+
+/* ════════════════════════════════════════════════
+   LAYOUT SWITCHER
+════════════════════════════════════════════════ */
+let currentLayout = 'timeline';
+
+document.querySelectorAll('.layout-btn').forEach(btn=>{
+  btn.onclick = () => {
+    document.querySelectorAll('.layout-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentLayout = btn.dataset.layout;
+    renderAll();
+  };
+});
+
+/* ════════════════════════════════════════════════
+   RENDER DISPATCHER
+════════════════════════════════════════════════ */
+async function renderAll(){
+  const all    = await loadPhotos();
+  const photos = filterPhotos(all);
+
+  renderTagStrip(all);
+
+  const cnt = document.getElementById('filterCount');
+  cnt.textContent = activeTags.size
+    ? `${photos.length} / ${all.length} 张`
+    : `${all.length} 张`;
+
+  document.getElementById('viewTimeline').style.display  = currentLayout==='timeline'  ? '' : 'none';
+  document.getElementById('viewMasonry').style.display   = currentLayout==='masonry'   ? '' : 'none';
+  document.getElementById('viewFilmstrip').style.display = currentLayout==='filmstrip' ? '' : 'none';
+
+  if(currentLayout==='timeline')  renderTimeline(photos);
+  if(currentLayout==='masonry')   renderMasonry(photos);
+  if(currentLayout==='filmstrip') renderFilmstrip(photos);
+
+  buildYearScrubber(photos);
+}
+
+/* ════════════════════════════════════════════════
+   ASPECT RATIO HELPER
+════════════════════════════════════════════════ */
+function getRatioClass(photo){
+  if(!photo.width||!photo.height) return 'ratio-landscape';
+  const r = photo.width/photo.height;
+  if(r < 0.85) return 'ratio-portrait';
+  if(r > 1.15) return 'ratio-landscape';
+  return 'ratio-square';
+}
+
+function isVideo(photo){ return photo.mediaType === 'video'; }
+
+function fmtDur(s){
+  if(!s||isNaN(s)) return '';
+  s = Math.round(s);
+  const m = Math.floor(s/60), sec = s%60;
+  return `${m}:${String(sec).padStart(2,'0')}`;
+}
+
+function cardImgHTML(photo){
+  const rc = getRatioClass(photo);
+  if(isVideo(photo)){
+    const thumb = photo.thumbUrl
+      ? `<img src="${photo.thumbUrl}" alt="${escH(photo.title||'')}" loading="lazy"/>`
+      : `<div class="card-placeholder" style="aspect-ratio:4/3">▷ 视频</div>`;
+    const dur = photo.duration ? `<span class="video-duration">${fmtDur(photo.duration)}</span>` : '';
+    return `<div class="card-img ${rc}" style="position:relative">
+      ${thumb}
+      <div class="video-badge"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+      ${dur}
+    </div>`;
+  }
+  const imgSrc = photo.r2Url||photo.dataUrl||'';
+  const imgTag = imgSrc
+    ? `<img src="${imgSrc}" alt="${escH(photo.title||'')}" loading="lazy"/>`
+    : `<div class="card-placeholder">No Image</div>`;
+  return `<div class="card-img ${rc}">${imgTag}</div>`;
+}
+
+function cardInfoHTML(photo, idx){
+  const date  = photo.date  ? `<div class="meta-field"><span class="mf-icon time">🕐</span><span class="mf-text date-txt">${escH(photo.date)}</span></div>` : '';
+  const loc   = photo.loc   ? `<div class="meta-field"><span class="mf-icon loc">📍</span><span class="mf-text">${escH(photo.loc)}</span></div>` : '';
+  const story = photo.story ? `<div class="meta-field"><span class="mf-icon story">✦</span><div class="mf-story-wrap"><div class="mf-text mf-story-text" id="story-${idx}">${escH(photo.story)}</div>${photo.story.length>60?`<button class="mf-expand-btn" data-story="${idx}">展开 ↓</button>`:''}</div></div>` : '';
+  const tags  = (photo.tags||[]).length ? `<div class="card-tags">${photo.tags.map(t=>`<span class="card-tag">${escH(t)}</span>`).join('')}</div>` : '';
+  return `<div class="card-info">${date}${loc}${story}${tags}</div><div class="card-accent"></div>`;
+}
+
+function bindExpandBtns(container){
+  container.querySelectorAll('.mf-expand-btn').forEach(btn=>{
+    btn.onclick = e => {
+      e.stopPropagation();
+      const id = btn.dataset.story;
+      const el = document.getElementById('story-'+id);
+      if(!el) return;
+      el.classList.toggle('expanded');
+      btn.textContent = el.classList.contains('expanded') ? '收起 ↑' : '展开 ↓';
+    };
+  });
+}
+
+/* ════════════════════════════════════════════════
+   LAYOUT 1 — TIMELINE
+════════════════════════════════════════════════ */
+function renderTimeline(photos){
+  const track = document.getElementById('tlTrack');
+  track.innerHTML = '';
+
+  if(!photos.length){ track.innerHTML = emptyHTML(); return; }
+
+  // Group by year for dividers
+  const byYear = {};
+  photos.forEach((p,i)=>{
+    const y = extractYear(p.date)||'未知年份';
+    if(!byYear[y]) byYear[y]={photos:[],startIdx:i};
+    byYear[y].photos.push({photo:p, globalIdx:i});
+  });
+
+  let globalIdx = 0;
+  Object.entries(byYear).forEach(([year, group])=>{
+    // Year divider
+    const ydiv = document.createElement('div');
+    ydiv.className = 'year-divider';
+    ydiv.id = `year-${year}`;
+    ydiv.innerHTML = `
+      <div class="yd-year" data-year="${year}">${year}</div>
+      <div class="yd-info">
+        <div class="yd-count">${group.photos.length} 张影像</div>
+        <div class="yd-line"></div>
+      </div>`;
+    track.appendChild(ydiv);
+
+    group.photos.forEach(({photo, globalIdx:gi})=>{
+      const side = gi%2===0 ? 'left' : 'right';
+      const item = document.createElement('div');
+      item.className = `tl-item ${side}`;
+      item.dataset.idx = gi;
+
+      const card = `<div class="tl-card ${side}" tabindex="0" role="button">
+        ${cardImgHTML(photo)}
+        ${cardInfoHTML(photo, gi)}
+      </div>`;
+      const node = `<div class="tl-node"><div class="tl-dot"></div><span class="tl-year-label">${extractYear(photo.date)}</span></div>`;
+      const empty = `<div class="tl-empty"></div>`;
+
+      item.innerHTML = side==='left' ? card+node+empty : empty+node+card;
+      track.appendChild(item);
+      bindExpandBtns(item);
+      item.querySelector('.tl-card').onclick = () => openLB(gi);
+      item.querySelector('.tl-card').onkeydown = e => { if(e.key==='Enter'||e.key===' ') openLB(gi); };
+    });
+  });
+
+  initObserver('.tl-item');
+}
+
+/* ════════════════════════════════════════════════
+   LAYOUT 2 — MASONRY
+════════════════════════════════════════════════ */
+function renderMasonry(photos){
+  const grid = document.getElementById('masonryGrid');
+  grid.innerHTML = '';
+  if(!photos.length){ grid.innerHTML = emptyHTML(); return; }
+  photos.forEach((photo,i)=>{
+    const item = document.createElement('div');
+    item.className = 'masonry-item';
+    item.dataset.idx = i;
+    const card = document.createElement('div');
+    card.className = 'masonry-card';
+    card.tabIndex = 0;
+    card.innerHTML = cardImgHTML(photo) + cardInfoHTML(photo, i);
+    card.onclick = () => openLB(i);
+    card.onkeydown = e => { if(e.key==='Enter') openLB(i); };
+    bindExpandBtns(card);
+    item.appendChild(card);
+    grid.appendChild(item);
+    item.style.animationDelay = `${i*.035}s`;
+  });
+  initObserver('.masonry-item');
+}
+
+/* ════════════════════════════════════════════════
+   LAYOUT 3 — FILMSTRIP
+════════════════════════════════════════════════ */
+function renderFilmstrip(photos){
+  const wrap = document.getElementById('filmstripWrap');
+  wrap.innerHTML = '';
+  if(!photos.length){ wrap.innerHTML = emptyHTML(); return; }
+
+  const byYear = {};
+  photos.forEach((p,i)=>{
+    const y = extractYear(p.date)||'未知年份';
+    if(!byYear[y]) byYear[y]=[];
+    byYear[y].push({photo:p,idx:i});
+  });
+
+  Object.entries(byYear).forEach(([year, items])=>{
+    const group = document.createElement('div');
+    group.className = 'filmstrip-year-group';
+    group.id = `year-${year}`;
+    group.innerHTML = `<div class="filmstrip-year-title">${year} · ${items.length} 张</div>`;
+    const row = document.createElement('div');
+    row.className = 'filmstrip-row';
+    items.forEach(({photo,idx})=>{
+      const cell = document.createElement('div');
+      cell.className = 'filmstrip-cell';
+      if(isVideo(photo)){
+        const thumbSrc = photo.thumbUrl || null;
+        if(thumbSrc){
+          const img = document.createElement('img');
+          img.src = thumbSrc; img.alt = photo.title||''; img.loading='lazy';
+          cell.appendChild(img);
+        }
+        const badge = document.createElement('div');
+        badge.className='video-badge';
+        badge.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)';
+        badge.innerHTML='<svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#fff;margin-left:2px"><path d="M8 5v14l11-7z"/></svg>';
+        cell.appendChild(badge);
+        if(photo.duration){
+          const dur=document.createElement('span');
+          dur.className='video-duration';
+          dur.textContent=fmtDur(photo.duration);
+          cell.appendChild(dur);
+        }
+      } else if(photo.r2Url||photo.dataUrl){
+        const img = document.createElement('img');
+        img.src = photo.r2Url||photo.dataUrl;
+        img.alt = photo.title||'';
+        img.loading = 'lazy';
+        cell.appendChild(img);
+      }
+      cell.onclick = () => openLB(idx);
+      row.appendChild(cell);
+    });
+    group.appendChild(row);
+    wrap.appendChild(group);
+  });
+}
+
+/* ════════════════════════════════════════════════
+   YEAR SCRUBBER
+════════════════════════════════════════════════ */
+function buildYearScrubber(photos){
+  const nav = document.getElementById('yearScrubber');
+  nav.innerHTML = '';
+  const years = [...new Set(photos.map(p=>extractYear(p.date)||'?'))];
+  if(years.length < 2){ nav.classList.remove('visible'); return; }
+  years.forEach(y=>{
+    const item = document.createElement('div');
+    item.className = 'ys-item';
+    item.dataset.year = y;
+    item.innerHTML = `<span class="ys-label">${y}</span><div class="ys-dot"></div>`;
+    item.onclick = () => {
+      const target = document.getElementById(`year-${y}`);
+      if(target) target.scrollIntoView({behavior:'smooth',block:'start'});
+    };
+    nav.appendChild(item);
+  });
+  nav.classList.add('visible');
+
+  // Highlight active year on scroll
+  const observer = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        const y = e.target.id.replace('year-','');
+        nav.querySelectorAll('.ys-item').forEach(i=>{
+          i.classList.toggle('active', i.dataset.year===y);
+        });
+      }
+    });
+  },{threshold:.5, rootMargin:'-30% 0px -60% 0px'});
+
+  document.querySelectorAll('[id^="year-"]').forEach(el=>observer.observe(el));
+}
+
+/* ════════════════════════════════════════════════
+   INTERSECTION OBSERVER (scroll-in)
+════════════════════════════════════════════════ */
+function initObserver(sel){
+  const obs = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){ e.target.classList.add('visible'); obs.unobserve(e.target); }
+    });
+  },{threshold:.1});
+  document.querySelectorAll(sel).forEach(el=>obs.observe(el));
+}
+
+function extractYear(s){
+  if(!s) return '';
+  const m = String(s).match(/(\d{4})/);
+  return m ? m[1] : '';
+}
+
+function emptyHTML(){
+  return `<div class="empty-state">
+    <div class="empty-icon">✦</div>
+    <h3>相册尚无影像</h3>
+    <p>前往后台编辑器上传您的珍贵照片<br/>让回忆有迹可循</p>
+    <a class="btn-goto" href="album-admin.html">前往上传</a>
+  </div>`;
+}
+
+/* ════════════════════════════════════════════════
+   LIGHTBOX — core
+════════════════════════════════════════════════ */
+let lbPhotos = [];
+let lbIdx    = 0;
+let lbTransitioning = false;
+
+// Zoom / pan state
+let lbScale  = 1;
+let lbPanX   = 0;
+let lbPanY   = 0;
+let isPanning= false;
+let panStart = {x:0,y:0};
+
+const lb       = document.getElementById('lb');
+const lbImg    = document.getElementById('lbImg');
+const lbPrev_  = document.getElementById('lbImgPrev');
+const lbVid    = document.getElementById('lbVideo');
+const lbCap    = document.getElementById('lbCaption');
+const lbStage  = document.getElementById('lbStage');
+const lbSsFill = document.getElementById('lbSsFill');
+
+function lbShowMedia(photo, animate){
+  const vid = isVideo(photo);
+  if(vid){
+    lbImg.style.display   = 'none';
+    lbPrev_.style.display = 'none';
+    lbVid.style.display   = 'block';
+    lbVid.classList.add('show');
+    lbVid.src = photo.r2Url || photo.dataUrl || '';
+    lbStage.classList.add('is-video');
+    document.getElementById('lbZoomHint').style.display = 'none';
+    document.getElementById('lbZoomReset').style.display = 'none';
+  } else {
+    lbImg.style.display   = '';
+    lbPrev_.style.display = '';
+    lbVid.style.display   = 'none';
+    lbVid.pause && lbVid.pause();
+    lbVid.src = '';
+    lbStage.classList.remove('is-video');
+    document.getElementById('lbZoomHint').style.display = '';
+  }
+}
+
+async function openLB(idx){
+  lbPhotos = await loadPhotos();
+  lbIdx    = idx;
+  resetZoom();
+  const photo = lbPhotos[idx];
+  lbImg.style.transition = 'none';
+  lbImg.style.opacity = '1';
+  lbImg.src = (!isVideo(photo) ? (photo?.r2Url||photo?.dataUrl) : '') || '';
+  lbPrev_.style.opacity = '0';
+  lbShowMedia(photo, false);
+  setCaption(photo, false);
+  lb.classList.add('active');
+  document.body.style.overflow = 'hidden';
+  history.replaceState(null,'',`#photo-${photo?.id||idx}`);
+}
+
+function closeLB(){
+  lb.classList.remove('active');
+  document.body.style.overflow = '';
+  stopSlideshow();
+  lbVid.pause && lbVid.pause();
+  lbVid.src = '';
+  history.replaceState(null,'',window.location.pathname + window.location.search);
+}
+
+/* Premium crossfade — handles both image and video */
+function goTo(newIdx){
+  if(lbTransitioning||!lbPhotos.length) return;
+  lbTransitioning = true;
+  resetZoom();
+
+  const photo    = lbPhotos[newIdx];
+  const prevIsVid = isVideo(lbPhotos[lbIdx]);
+  const nextIsVid = isVideo(photo);
+
+  // Stop current video if any
+  if(prevIsVid){ lbVid.pause && lbVid.pause(); }
+
+  // For image→image: crossfade; otherwise: simple fade
+  if(!prevIsVid && !nextIsVid){
+    lbPrev_.src = lbImg.src;
+    lbPrev_.style.transition = 'none';
+    lbPrev_.style.opacity = '1';
+    lbPrev_.style.transform = 'scale(1)';
+  }
+
+  lbCap.classList.add('fading');
+
+  // Fade out current
+  const fadeTarget = prevIsVid ? lbVid : lbImg;
+  fadeTarget.style.transition = 'opacity .3s ease, transform .3s ease';
+  fadeTarget.style.opacity = '0';
+  if(!prevIsVid) fadeTarget.style.transform = 'scale(1.04)';
+
+  setTimeout(()=>{
+    lbShowMedia(photo, true);
+
+    if(!nextIsVid){
+      lbImg.src = photo?.r2Url||photo?.dataUrl||'';
+      lbImg.style.transition = 'none';
+      lbImg.style.transform = 'scale(.96)';
+      lbImg.style.opacity = '0';
+
+      if(!prevIsVid){
+        lbPrev_.style.transition = 'opacity .28s ease';
+        lbPrev_.style.opacity = '0';
+      }
+
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        lbImg.style.transition = 'opacity .38s ease, transform .58s cubic-bezier(.19,1,.22,1)';
+        lbImg.style.opacity = '1';
+        lbImg.style.transform = 'scale(1)';
+      }));
+    } else {
+      lbVid.style.transition = 'none';
+      lbVid.style.opacity = '0';
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        lbVid.style.transition = 'opacity .38s ease';
+        lbVid.style.opacity = '1';
+      }));
+    }
+
+    lbIdx = newIdx;
+    setCaption(photo, true);
+    history.replaceState(null,'',`#photo-${photo?.id||newIdx}`);
+    setTimeout(()=>{ lbTransitioning=false; }, 620);
+  }, 285);
+}
+
+function setCaption(photo, animate){
+  const doUpdate = ()=>{
+    document.getElementById('lbDate').textContent  = photo?.date  || '';
+    document.getElementById('lbLoc').textContent   = photo?.loc   || '';
+    document.getElementById('lbStory').textContent = photo?.story || '';
+    document.getElementById('lbRowDate').style.display  = photo?.date  ? '' : 'none';
+    document.getElementById('lbRowLoc').style.display   = photo?.loc   ? '' : 'none';
+    document.getElementById('lbRowStory').style.display = photo?.story ? '' : 'none';
+    document.getElementById('lbCounter').textContent =
+      `${String(lbIdx+1).padStart(2,'0')} · ${String(lbPhotos.length).padStart(2,'0')}`;
+    renderComments(photo?.id);
+    lbCap.classList.remove('fading');
+  };
+  animate ? setTimeout(doUpdate, 220) : doUpdate();
+}
+
+document.getElementById('lbClose').onclick = closeLB;
+document.getElementById('lbPrev').onclick  = () => goTo((lbIdx-1+lbPhotos.length)%lbPhotos.length);
+document.getElementById('lbNext').onclick  = () => goTo((lbIdx+1)%lbPhotos.length);
+lb.onclick = e => { if(e.target===lb) closeLB(); };
+
+document.addEventListener('keydown', e=>{
+  if(!lb.classList.contains('active')) return;
+  if(e.key==='Escape')    closeLB();
+  if(e.key==='ArrowLeft') goTo((lbIdx-1+lbPhotos.length)%lbPhotos.length);
+  if(e.key==='ArrowRight')goTo((lbIdx+1)%lbPhotos.length);
+});
+
+// Touch swipe
+let txStart=0;
+lb.addEventListener('touchstart', e=>{ txStart=e.touches[0].clientX; },{passive:true});
+lb.addEventListener('touchend',   e=>{
+  if(lbScale>1) return; // don't swipe when zoomed
+  const dx=e.changedTouches[0].clientX-txStart;
+  if(Math.abs(dx)>48)
+    goTo(dx<0?(lbIdx+1)%lbPhotos.length:(lbIdx-1+lbPhotos.length)%lbPhotos.length);
+});
+
+/* ════════════════════════════════════════════════
+   LIGHTBOX — ZOOM & PAN
+════════════════════════════════════════════════ */
+function applyTransform(){
+  lbImg.style.transform = `scale(${lbScale}) translate(${lbPanX/lbScale}px,${lbPanY/lbScale}px)`;
+}
+
+function resetZoom(){
+  lbScale=1; lbPanX=0; lbPanY=0;
+  lbImg.style.transition='transform .35s var(--ease)';
+  applyTransform();
+  lbStage.classList.remove('zoomed','panning');
+  document.getElementById('lbZoomReset').style.display='none';
+  document.getElementById('lbZoomHint').style.opacity='';
+  setTimeout(()=>lbImg.style.transition='',400);
+}
+
+// Wheel zoom
+lbStage.addEventListener('wheel', e=>{
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? -0.25 : 0.25;
+  lbScale = Math.min(4, Math.max(1, lbScale+delta));
+  applyTransform();
+  lbStage.classList.toggle('zoomed', lbScale>1);
+  document.getElementById('lbZoomReset').style.display = lbScale>1?'':'none';
+  document.getElementById('lbZoomHint').style.opacity  = lbScale>1?'0':'';
+},{passive:false});
+
+// Double-click to zoom/reset
+lbStage.addEventListener('dblclick', ()=>{
+  if(lbScale>1){ resetZoom(); }
+  else { lbScale=2; applyTransform(); lbStage.classList.add('zoomed'); document.getElementById('lbZoomReset').style.display=''; }
+});
+
+// Drag pan
+lbStage.addEventListener('mousedown', e=>{
+  if(lbScale<=1) return;
+  isPanning=true;
+  panStart={x:e.clientX-lbPanX, y:e.clientY-lbPanY};
+  lbStage.classList.add('panning');
+});
+window.addEventListener('mousemove', e=>{
+  if(!isPanning) return;
+  lbPanX = e.clientX-panStart.x;
+  lbPanY = e.clientY-panStart.y;
+  applyTransform();
+});
+window.addEventListener('mouseup', ()=>{ isPanning=false; lbStage.classList.remove('panning'); });
+
+// Touch pinch zoom
+let initDist=0, initScale=1;
+lbStage.addEventListener('touchstart', e=>{
+  if(e.touches.length===2){
+    initDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    initScale=lbScale;
+  }
+},{passive:true});
+lbStage.addEventListener('touchmove', e=>{
+  if(e.touches.length===2){
+    e.preventDefault();
+    const dist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    lbScale=Math.min(4,Math.max(1,initScale*(dist/initDist)));
+    applyTransform();
+    lbStage.classList.toggle('zoomed',lbScale>1);
+  }
+},{passive:false});
+
+document.getElementById('lbZoomReset').onclick = resetZoom;
+
+/* ════════════════════════════════════════════════
+   LIGHTBOX — DOWNLOAD
+════════════════════════════════════════════════ */
+document.getElementById('lbDownload').onclick = ()=>{
+  const photo = lbPhotos[lbIdx];
+  const url = photo?.r2Url||photo?.dataUrl;
+  if(!url) return;
+  const a = document.createElement('a');
+  a.href = url;
+  const baseName = (photo.title||photo.date||`media-${lbIdx+1}`).replace(/[/\\?%*:|"<>]/g,'_');
+  a.download = isVideo(photo) ? baseName + (photo.ext||'.mp4') : baseName + '.jpg';
+  a.target = '_blank'; // R2 URL needs new tab for cross-origin download
+  a.click();
+};
+
+/* ════════════════════════════════════════════════
+   LIGHTBOX — SHARE (URL hash copy)
+════════════════════════════════════════════════ */
+document.getElementById('lbShare').onclick = ()=>{
+  const url = window.location.origin + window.location.pathname + `#photo-${lbPhotos[lbIdx]?.id||lbIdx}`;
+  navigator.clipboard?.writeText(url).then(()=>{
+    const btn = document.getElementById('lbShare');
+    const orig = btn.textContent;
+    btn.textContent = '✓ 已复制';
+    btn.classList.add('active');
+    setTimeout(()=>{ btn.textContent=orig; btn.classList.remove('active'); }, 2000);
+  }).catch(()=>{ prompt('复制此链接：', url); });
+};
+
+/* ════════════════════════════════════════════════
+   LIGHTBOX — SLIDESHOW
+════════════════════════════════════════════════ */
+let ssTimer = null;
+let ssInterval = 5000;
+
+function startSlideshow(){
+  const btn = document.getElementById('lbSlideshow');
+  btn.textContent = '⏸ 暂停';
+  btn.classList.add('active');
+  ssStep();
+}
+
+function ssStep(){
+  clearTimeout(ssTimer);
+  lbSsFill.style.transition = 'none';
+  lbSsFill.style.width = '0%';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    lbSsFill.style.transition = `width ${ssInterval}ms linear`;
+    lbSsFill.style.width = '100%';
+  }));
+  ssTimer = setTimeout(()=>{
+    goTo((lbIdx+1)%lbPhotos.length);
+    setTimeout(ssStep, 700);
+  }, ssInterval);
+}
+
+function stopSlideshow(){
+  clearTimeout(ssTimer);
+  ssTimer = null;
+  lbSsFill.style.transition='none';
+  lbSsFill.style.width='0%';
+  const btn = document.getElementById('lbSlideshow');
+  btn.textContent='▷ 幻灯片';
+  btn.classList.remove('active');
+}
+
+document.getElementById('lbSlideshow').onclick = ()=>{
+  if(ssTimer){ stopSlideshow(); }
+  else { startSlideshow(); }
+};
+
+/* ════════════════════════════════════════════════
+   COMMENTS
+════════════════════════════════════════════════ */
+function loadComments(photoId){
+  const all = load(COMMENT_KEY)||{};
+  return all[photoId]||[];
+}
+
+function saveComment(photoId, name, text){
+  const all = load(COMMENT_KEY)||{};
+  if(!all[photoId]) all[photoId]=[];
+  all[photoId].push({name: name||'匿名', text, time: Date.now()});
+  store(COMMENT_KEY, all);
+}
+
+function renderComments(photoId){
+  const wrap = document.getElementById('lbComments');
+  const comments = loadComments(photoId);
+  const savedName = localStorage.getItem('family_album_commenter')||'';
+
+  wrap.innerHTML = `
+    <div class="lb-comments-title">留言 · ${comments.length}</div>
+    <div class="comment-list" id="commentList"></div>
+    <div class="comment-add">
+      <input class="comment-name-input" id="cNameInput" placeholder="昵称" maxlength="12" value="${escH(savedName)}"/>
+      <input class="comment-text-input" id="cTextInput" placeholder="留下你的感受…" maxlength="100"/>
+      <button class="comment-send-btn" id="cSendBtn">发送</button>
+    </div>`;
+
+  const list = document.getElementById('commentList');
+  if(!comments.length){
+    list.innerHTML = `<span style="font-family:'Cormorant Garamond',serif;font-size:.68rem;letter-spacing:.22em;color:var(--dim)">还没有留言，来说点什么吧</span>`;
+  } else {
+    comments.forEach(c=>{
+      const el = document.createElement('div');
+      el.className='comment-item';
+      el.innerHTML=`<span class="comment-name">${escH(c.name)}</span><span>${escH(c.text)}</span>`;
+      list.appendChild(el);
+    });
+    list.scrollTop = list.scrollHeight;
+  }
+
+  document.getElementById('cSendBtn').onclick = ()=>{
+    const name = document.getElementById('cNameInput').value.trim();
+    const text = document.getElementById('cTextInput').value.trim();
+    if(!text) return;
+    localStorage.setItem('family_album_commenter', name);
+    saveComment(photoId, name, text);
+    renderComments(photoId);
+  };
+  document.getElementById('cTextInput').onkeydown = e=>{
+    if(e.key==='Enter'){ e.preventDefault(); document.getElementById('cSendBtn').click(); }
+  };
+}
+
+/* ════════════════════════════════════════════════
+   MUSIC PLAYER
+════════════════════════════════════════════════ */
+const bgAudio = document.getElementById('bgAudio');
+let volLevel  = parseFloat(localStorage.getItem(VOL_KEY)||'0.4');
+bgAudio.volume = volLevel;
+
+function initMusic(){
+  const music = load(MUSIC_KEY);
+  if(!music?.dataUrl) return;
+  bgAudio.src = music.dataUrl;
+  document.getElementById('mpTrack').textContent = music.name||'背景音乐';
+  document.getElementById('musicPlayer').classList.add('show');
+  updateVolDisplay();
+}
+
+function updateVolDisplay(){
+  document.getElementById('mpVolFill').style.width = (bgAudio.volume*100)+'%';
+}
+
+document.getElementById('mpBtn').onclick = ()=>{
+  if(bgAudio.paused){
+    bgAudio.play().catch(()=>{});
+    document.getElementById('mpBtn').textContent='⏸';
+  } else {
+    bgAudio.pause();
+    document.getElementById('mpBtn').textContent='▷';
+  }
+};
+
+// Volume bar click
+const mpVol = document.getElementById('mpVol');
+mpVol.onclick = e=>{
+  const rect = mpVol.getBoundingClientRect();
+  const vol  = Math.max(0, Math.min(1, (e.clientX-rect.left)/rect.width));
+  bgAudio.volume = vol;
+  localStorage.setItem(VOL_KEY, vol);
+  updateVolDisplay();
+};
+
+/* ════════════════════════════════════════════════
+   HANDLE URL HASH (share link)
+════════════════════════════════════════════════ */
+async function handleHash(){
+  const hash = location.hash;
+  if(!hash.startsWith('#photo-')) return;
+  const id = hash.replace('#photo-','');
+  const photos = await loadPhotos();
+  const idx = photos.findIndex(p=>p.id===id||String(photos.indexOf(p))===id);
+  if(idx>=0){
+    setTimeout(()=>openLB(idx), 800);
+  }
+}
+
+/* ════════════════════════════════════════════════
+   PWA SERVICE WORKER
+════════════════════════════════════════════════ */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+
+/* ════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════ */
+document.getElementById('ftYear').textContent = new Date().getFullYear();
+checkGate();
+initMusic();
+
+(async()=>{
+  await initHeroCover();
+  await renderAll();
+  await initTodayMemory();
+  await handleHash();
+})();
+
+/* Storage change: refresh non-photo settings (access, music, cover id) */
+window.addEventListener('storage', e=>{
+  if([ACCESS_KEY,MUSIC_KEY,COVER_KEY].includes(e.key)){
+    checkGate();
+    initHeroCover();
+    initMusic();
+  }
+});
+</script>
+</body>
+</html>
