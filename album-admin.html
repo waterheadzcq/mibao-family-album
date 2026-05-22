@@ -733,60 +733,52 @@ async function getSigningKey(secret, date, region, service){
 }
 function toHex(buf){ return Array.from(buf).map(b=>b.toString(16).padStart(2,'0')).join('') }
 
-async function r2Upload(key, blob, contentType){
-  const now = new Date();
+/* 生成预签名 URL（Query String 签名，不依赖请求头，CORS 更宽松） */
+async function presignedPut(key, contentType, expiresIn=3600){
+  const now       = new Date();
   const dateStamp = now.toISOString().slice(0,10).replace(/-/g,'');
   const amzDate   = now.toISOString().replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z');
   const region    = 'auto';
   const service   = 's3';
   const host      = R2_ENDPOINT.replace(/^https?:\/\//,'');
-  const path      = `/${R2_BUCKET}/${encodeURIComponent(key).replace(/%2F/g,'/')}`;
+  const path      = '/' + R2_BUCKET + '/' + key.split('/').map(encodeURIComponent).join('/');
+  const credScope = `${dateStamp}/${region}/${service}/aws4_request`;
+  const credential= encodeURIComponent(`${R2_ACCESS_KEY}/${credScope}`);
 
-  const bodyBuf  = await blob.arrayBuffer();
-  const bodyHash = await sha256hex(bodyBuf);
+  const qs = [
+    `X-Amz-Algorithm=AWS4-HMAC-SHA256`,
+    `X-Amz-Credential=${credential}`,
+    `X-Amz-Date=${amzDate}`,
+    `X-Amz-Expires=${expiresIn}`,
+    `X-Amz-SignedHeaders=content-type%3Bhost`,
+  ].join('&');
 
-  /* Only sign headers that the browser will actually send (no 'host' — forbidden header) */
-  const signMap = {
-    'content-type':         contentType,
-    'x-amz-content-sha256': bodyHash,
-    'x-amz-date':           amzDate,
-  };
-  const sortedKeys    = Object.keys(signMap).sort();
-  const signedHeaders = sortedKeys.join(';');
-  const canonicalHeaders = sortedKeys.map(k=>`${k}:${signMap[k]}\n`).join('');
-
-  /* Canonical request — must include host line even though we don't sign it via fetch */
   const canonicalRequest = [
-    'PUT',
-    path,
-    '',                        // query string (empty)
-    `host:${host}\n` + canonicalHeaders,
-    'host;' + signedHeaders,
-    bodyHash,
+    'PUT', path, qs,
+    `content-type:${contentType}\nhost:${host}\n`,
+    'content-type;host',
+    'UNSIGNED-PAYLOAD',
   ].join('\n');
 
-  const credScope  = `${dateStamp}/${region}/${service}/aws4_request`;
-  const strToSign  = ['AWS4-HMAC-SHA256', amzDate, credScope,
+  const strToSign = ['AWS4-HMAC-SHA256', amzDate, credScope,
     await sha256hex(new TextEncoder().encode(canonicalRequest))].join('\n');
 
-  const signingKey = await getSigningKey(R2_SECRET_KEY, dateStamp, region, service);
-  const sigBuf     = await crypto.subtle.sign('HMAC', signingKey, new TextEncoder().encode(strToSign));
-  const signature  = toHex(new Uint8Array(sigBuf));
+  const sigKey = await getSigningKey(R2_SECRET_KEY, dateStamp, region, service);
+  const sigBuf = await crypto.subtle.sign('HMAC', sigKey, new TextEncoder().encode(strToSign));
+  const sig    = toHex(new Uint8Array(sigBuf));
 
-  const authHeader = `AWS4-HMAC-SHA256 Credential=${R2_ACCESS_KEY}/${credScope}, SignedHeaders=host;${signedHeaders}, Signature=${signature}`;
+  return `${R2_ENDPOINT}/${R2_BUCKET}/${key}?${qs}&X-Amz-Signature=${sig}`;
+}
 
-  const resp = await fetch(`${R2_ENDPOINT}/${R2_BUCKET}/${key}`, {
+async function r2Upload(key, blob, contentType){
+  const url  = await presignedPut(key, contentType);
+  const resp = await fetch(url, {
     method: 'PUT',
-    headers: {
-      'Authorization':        authHeader,
-      'x-amz-date':           amzDate,
-      'x-amz-content-sha256': bodyHash,
-      'content-type':         contentType,
-    },
+    headers: { 'content-type': contentType },
     body: blob,
   });
   if(!resp.ok){
-    const txt = await resp.text().catch(()=>'');
+    const txt = await resp.text().catch(()=>'(no body)');
     throw new Error(`R2 上传失败 (${resp.status}): ${txt.slice(0,300)}`);
   }
   return `${R2_PUBLIC_URL}/${key}`;
